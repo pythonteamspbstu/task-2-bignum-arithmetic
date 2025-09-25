@@ -23,21 +23,26 @@ digits = список цифр в системе с нашим основани�
 
 
 1. Скачайте файл проекта
+
 git clone https://github.com/pythonteamspbstu/task-2-bignum-arithmetic
 
 2. Перейдите в директорию проекта
+
 cd task-2-bignum-arithmetic
 
 3. Запустите программу
-python task-2.py
+
+python task2.py
 
 **Linux/macOS**
 
 1. Скачайте файл проекта
+
 git clone https://github.com/pythonteamspbstu/task-2-bignum-arithmetic
 
 2. Запустите программу
-python3 task-2.py
+
+python3 task2.py
 
 ## Реализовано
 
