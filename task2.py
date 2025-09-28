@@ -97,7 +97,7 @@ def subtract(a, b):
     if a_sign != b_sign:
         if a_sign < 0:
             result = add((1, a_digits), (1, b_digits))
-            return (-a_sign, result[1])
+            return (a_sign, result[1])
         else:
             return add(a, (1, b_digits))
 
@@ -161,12 +161,10 @@ def multiply(a, b):
 
 
 def divide(a, b):
-    precision = 20
     if isinstance(a, int):
         a = create_bignum(a)
     if isinstance(b, int):
         b = create_bignum(b)
-
     if is_zero(b):
         raise ZeroDivisionError("Делить на 0 нельзя")
     a_sign, a_digits = a
@@ -176,33 +174,42 @@ def divide(a, b):
     if cmp < 0:
         return (1, [0])
     norm_factor = BASE // (b_digits[-1] + 1)
-    a_norm = multiply(a, (1, [norm_factor]))[1]
-    b_norm = multiply(b, (1, [norm_factor]))[1]
+    a_norm = multiply(a, (1, [norm_factor]))
+    b_norm = multiply(b, (1, [norm_factor]))
+    a_digits_norm = a_norm[1]
+    b_digits_norm = b_norm[1]
     quotient_digits = []
-    remainder = a_norm[:len(b_norm) - 1] or [0]
-    for i in range(len(b_norm) - 1, len(a_norm)):
-        remainder.append(a_norm[i])
-        remainder = normalize(remainder)
-        if len(remainder) < len(b_norm):
-            q_digit = 0
+    current_remainder = []
+    for i in range(len(a_digits_norm) - 1, -1, -1):
+        current_remainder.insert(0, a_digits_norm[i])
+        current_remainder = normalize(current_remainder)
+        if abs_compare(current_remainder, b_digits_norm) < 0:
+            quotient_digits.insert(0, 0)
+            continue
+        if len(current_remainder) == len(b_digits_norm):
+            top = current_remainder[-1]
         else:
-            top = remainder[-1] * BASE + remainder[-2] if len(remainder) > 1 else remainder[-1]
-            q_digit = min(top // b_norm[-1], BASE - 1)
-            while True:
-                product = multiply((1, b_norm), q_digit)[1]
-                if abs_compare(product, remainder) <= 0:
-                    break
-                q_digit -= 1
-        quotient_digits.append(q_digit)
-        product = multiply((1, b_norm), q_digit)[1]
-        remainder = subtract((1, remainder), (1, product))[1]
-    return (result_sign, normalize(quotient_digits))
+            top = current_remainder[-1] * BASE + current_remainder[-2]
+
+        q_digit = min(top // b_digits_norm[-1], BASE - 1)
+        while True:
+            product = multiply((1, b_digits_norm), q_digit)
+            if abs_compare(product[1], current_remainder) <= 0:
+                break
+            q_digit -= 1
+        quotient_digits.insert(0, q_digit)
+        product = multiply((1, b_digits_norm), q_digit)
+        current_remainder = subtract((1, current_remainder), product)[1]
+        current_remainder = normalize(current_remainder)
+    quotient = (result_sign, normalize(quotient_digits))
+    return quotient
 
 
 def is_zero(bignum):
     sign, digits = bignum
     return len(digits) == 1 and digits[0] == 0
-    
+
+
 def show_base_m(bignum):
     sign, digits = bignum
     if len(digits) == 1 and digits[0] == 0:
@@ -228,34 +235,34 @@ def interactive():
     print(f"База системы счисления (M) = 2^15 = {BASE}")
     print(f"Максимальное количество разрядов (N) = {MAX_DIGITS}")
     print()
-    
+
     try:
         num1 = get_valid_integer("Введите первое число: ")
-        
+
         num2 = get_valid_integer("Введите второе число: ")
-        
+
         a = create_bignum(num1)
         b = create_bignum(num2)
-        
+
         print(f"\nВведенные числа:")
         print(f"a = {to_string(a)} (десятичная система), a = {show_base_m(a)} (система с основанием М=2^15)")
         print(f"b = {to_string(b)} (десятичная система), b = {show_base_m(b)} (система с основанием М=2^15)")
-        
+
         sum_result = add(a, b)
         print(f"\nСложение:")
         print(f"a + b = {to_string(sum_result)} (десятичная система)")
         print(f"a + b = {show_base_m(sum_result)} (система с основанием М=2^15)")
-        
+
         diff_result = subtract(a, b)
         print(f"\nВычитание:")
         print(f"a - b = {to_string(diff_result)} (десятичная система)")
         print(f"a - b = {show_base_m(diff_result)} (система с основанием М=2^15)")
-        
+
         prod_result = multiply(a, b)
         print(f"\nУмножение:")
         print(f"a * b = {to_string(prod_result)} (десятичная система)")
         print(f"a * b = {show_base_m(prod_result)} (система с основанием М=2^15)")
-        
+
         try:
             quotient_result = divide(a, b)
             print(f"\nДеление:")
@@ -263,12 +270,12 @@ def interactive():
             print(f"a / b = {show_base_m(quotient_result)} (система с основанием М=2^15)")
         except ZeroDivisionError:
             print(f"\nДеление: Ошибка - деление на ноль невозможно")
-        
+
     except KeyboardInterrupt:
         print("\nПрограмма прервана пользователем.")
     except Exception as e:
         print(f"\nПроизошла ошибка: {e}")
-    
+
     print("\nПрограмма завершена.")
 
 
